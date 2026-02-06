@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  role      Role      @default(USER)
+  createdAt DateTime  @default(now())
+  bookings  Booking[]
+}
+
+model Car {
+  id          String    @id @default(uuid())
+  name        String
+  brand       String
+  pricePerDay Float
+  type        String
+  imageUrl    String
+  // availability is computed, not stored
+  bookings    Booking[]
+}
+
+model Booking {
+  id         String        @id @default(uuid())
+  userId     String
+  carId      String
+  startDate  DateTime
+  endDate    DateTime
+  totalPrice Float
+  status     BookingStatus @default(PENDING)
+  user       User          @relation(fields: [userId], references: [id])
+  car        Car           @relation(fields: [carId], references: [id])
+  payment    Payment?
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  bookingId       String   @unique
+  amount          Float
+  stripePaymentId String?
+  status          String   // Success, Failed
+  booking         Booking  @relation(fields: [bookingId], references: [id])
+}
